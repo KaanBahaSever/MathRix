@@ -1,10 +1,13 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <initializer_list>
 #include <ostream>
 #include <vector>
+
+#include "Complex.hpp"
 
 namespace mathrix {
 
@@ -26,6 +29,57 @@ public:
         double r = 0.0;
         for (size_t i = c_.size(); i-- > 0;) r = r * x + c_[i];
         return r;
+    }
+
+    /// Horner evaluation at a complex point.
+    Complex operator()(const Complex& z) const {
+        Complex r;
+        for (size_t i = c_.size(); i-- > 0;) r = r * z + c_[i];
+        return r;
+    }
+
+    /// All roots (real and complex, with multiplicity) by the Durand-Kerner method followed by
+    /// Newton polishing. Roots whose imaginary part is negligible are returned as exact reals.
+    std::vector<Complex> roots(double tol = 1e-13, int maxIterations = 1000) const {
+        const int n = degree();
+        std::vector<Complex> z;
+        if (n < 1) return z;
+        // Monic coefficients.
+        std::vector<double> a(c_.size());
+        for (size_t i = 0; i < c_.size(); ++i) a[i] = c_[i] / c_.back();
+        const Polynomial monic(a);
+        // Initial guesses on a circle of the Cauchy root bound.
+        double bound = 0.0;
+        for (int i = 0; i < n; ++i) bound = std::max(bound, std::abs(a[static_cast<size_t>(i)]));
+        bound += 1.0;
+        for (int k = 0; k < n; ++k) z.push_back(Complex::polar(bound, 0.4 + 6.283185307179586 * k / n));
+        for (int it = 0; it < maxIterations; ++it) {
+            double change = 0.0;
+            for (int k = 0; k < n; ++k) {
+                Complex denom(1.0);
+                for (int j = 0; j < n; ++j)
+                    if (j != k) denom *= z[static_cast<size_t>(k)] - z[static_cast<size_t>(j)];
+                if (denom.norm() == 0.0) denom = Complex(tol, tol);
+                const Complex step = monic(z[static_cast<size_t>(k)]) / denom;
+                z[static_cast<size_t>(k)] -= step;
+                change = std::max(change, step.abs() / (1.0 + z[static_cast<size_t>(k)].abs()));
+            }
+            if (change < tol) break;
+        }
+        const Polynomial d = monic.derivative();
+        for (auto& r : z) {
+            for (int it = 0; it < 3; ++it) {  // Newton polishing (skipped near multiple roots)
+                const Complex dv = d(r);
+                if (dv.abs() < 1e-8) break;
+                r -= monic(r) / dv;
+            }
+            if (std::abs(r.im) <= 1e-9 * (1.0 + std::abs(r.re))) r.im = 0.0;
+            if (std::abs(r.re) <= 1e-12 * (1.0 + std::abs(r.im))) r.re = 0.0;
+        }
+        std::sort(z.begin(), z.end(), [](const Complex& x, const Complex& y) {
+            return x.re != y.re ? x.re < y.re : x.im < y.im;
+        });
+        return z;
     }
 
     Polynomial derivative() const {
