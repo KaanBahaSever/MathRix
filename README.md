@@ -28,11 +28,13 @@ using namespace mathrix;
 A system of $n$ linear equations in $n$ unknowns, for example
 
 ```math
-\begin{cases}
-\phantom{-}2x + y - z = 8 \\
--3x - y + 2z = -11 \\
--2x + y + 2z = -3
-\end{cases}
+\left\{
+\begin{aligned}
+ 2x + y - z &= 8 \\
+-3x - y + 2z &= -11 \\
+-2x + y + 2z &= -3
+\end{aligned}
+\right.
 ```
 
 is written in matrix form as
