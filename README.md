@@ -31,8 +31,12 @@ Vec3 v = q.rotate(Vec3::unitX());                               // (0, 1, 0)
 Interpolator1D thrust(t, F, Interp::Pchip, Extrapolation::Zero); // no overshoot
 double impulse = thrust.integrate(0.0, t.back());
 
-Matrix A{{3, 2}, {1, 2}};
-Matrix x = A.solve(Matrix::column({7, 5}));                     // [1, 2]
+// Linear system A x = b with n unknowns (Gaussian elimination with partial pivoting)
+Matrix A{{ 2,  1, -1},
+         {-3, -1,  2},
+         {-2,  1,  2}};
+Matrix b = Matrix::column({8, -11, -3});
+Matrix x = A.solve(b);                                          // [2, 3, -1]
 
 Polynomial p{1, 0, -3, 1};                                      // x^3 - 3x^2 + 1
 double r = p.rootIn(0.0, 1.0);
@@ -57,6 +61,9 @@ FetchContent_MakeAvailable(MathRix)
 
 # or installed: find_package(MathRix REQUIRED)
 ```
+
+See [`examples/linear_system.cpp`](examples/linear_system.cpp) for a complete n-unknown example, including the residual check
+and singular systems.
 
 ## Building the tests
 

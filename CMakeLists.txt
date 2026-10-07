@@ -30,8 +30,10 @@ if(MATHRIX_BUILD_TESTS)
 endif()
 
 if(MATHRIX_BUILD_EXAMPLES)
-    add_executable(mathrix_example examples/example.cpp)
-    target_link_libraries(mathrix_example PRIVATE MathRix::MathRix)
+    foreach(example example linear_system)
+        add_executable(mathrix_${example} examples/${example}.cpp)
+        target_link_libraries(mathrix_${example} PRIVATE MathRix::MathRix)
+    endforeach()
 endif()
 
 include(GNUInstallDirs)
